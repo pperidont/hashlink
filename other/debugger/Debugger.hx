@@ -9,6 +9,22 @@ typedef GlobalAccess = {
 	var gid : Null<Int>;
 }
 
+enum Result {
+	Ok;
+	Error;
+	Exited;
+	Paused;
+	Breakpoint;
+	Stdout;
+	Stderr;
+	ErrorOccured;
+	Backtrace;
+	Frame;
+	Variable;
+	UnknownVar;
+	Threads;
+}
+
 class Debugger extends DebugValue.DebugValueReader {
 
 	static inline var INT3 = 0xCC;
@@ -203,7 +219,7 @@ class Debugger extends DebugValue.DebugValueReader {
 		return true;
 	}
 
-	public function run() {
+	public function run( timeout = 1000, stopOnTimeout = false  ) {
 		// unlock waiting thread
 		if( sock != null ) {
 			sock.close();
@@ -211,16 +227,18 @@ class Debugger extends DebugValue.DebugValueReader {
 		}
 		if( stoppedThread != null )
 			resume();
-		return wait();
+		return wait(timeout,stopOnTimeout);
 	}
 
-	function wait() {
+	function wait( timeout = 1000, stopOnTimeout = false ) {
 		var tid = 0;
 		var cmd = Timeout;
 		while( true ) {
-			cmd = DebugApi.wait(pid, tid, 1000);
+			cmd = DebugApi.wait(pid, tid, timeout);
 			switch( cmd ) {
 			case Timeout:
+				if( stopOnTimeout )
+					return cmd;
 				// continue
 			case Breakpoint:
 				var eip = getReg(tid, Eip);
@@ -551,6 +569,7 @@ class Debugger extends DebugValue.DebugValueReader {
 		var debugPort = 5001;
 		var file = null;
 		var pid : Null<Int> = null;
+		var listenPort : Null<Int> = null;
 		while( args.length > 0 && args[0].charCodeAt(0) == '-'.code ) {
 			var param = args.shift();
 			switch( param ) {
@@ -562,13 +581,18 @@ class Debugger extends DebugValue.DebugValueReader {
 				param = args.shift();
 				if( param == null || (pid = Std.parseInt(param)) == null )
 					error("Require attach process id value");
+			case "-listen":
+				param = args.shift();
+				if( param == null || (listenPort = Std.parseInt(param)) == null )
+					error("Require listen port value");
+
 			default:
 				error("Unsupported parameter " + param);
 			}
 		}
 		file = args.shift();
 		if( file == null ) {
-			Sys.println("hldebug [-port <port>] [-path <path>] <file.hl> <args>");
+			Sys.println("hldebug [-port <port>] [-path <path>] [-listen <port>] <file.hl> <args>");
 			Sys.exit(1);
 		}
 		if( !sys.FileSystem.exists(file) )
@@ -580,16 +604,17 @@ class Debugger extends DebugValue.DebugValueReader {
 			pid = process.getPid();
 		}
 
+
+		var dbg = new Debugger();
+		var breaks = [];
+		dbg.loadCode(file);
+
 		function dumpProcessOut() {
 			if( process == null ) return;
 			if( process.exitCode(false) == null ) process.kill();
 			Sys.print(process.stdout.readAll().toString());
 			Sys.stderr().writeString(process.stderr.readAll().toString());
 		}
-
-		var dbg = new Debugger();
-		var breaks = [];
-		dbg.loadCode(file);
 
 		if( !dbg.startDebug(pid, debugPort) ) {
 			dumpProcessOut();
@@ -608,98 +633,244 @@ class Debugger extends DebugValue.DebugValueReader {
 			Sys.println(count + " breakpoints removed");
 		}
 
-		var stdin = Sys.stdin();
-		while( true ) {
+		if( listenPort != null ){
+			var serv = new sys.net.Socket();
+			serv.bind( new sys.net.Host("127.0.0.1"), listenPort );
+			serv.listen(1);
+			var sock = serv.accept();
+			var running = false;
 
-			if( process != null ) {
-				var ecode = process.exitCode(false);
-				if( ecode != null ) {
-					dumpProcessOut();
-					error("Process exit with code " + ecode);
+			function send( res : Result, ?data : Array<String>, cmdRes = true ){
+				sock.output.writeByte(Type.enumIndex(res)<<1 | (cmdRes ? 1 : 0));
+				if( data == null ){
+					sock.output.writeByte(0);
+				}else{
+					sock.output.writeByte(data.length);
+					for( s in data ){
+						var b = haxe.io.Bytes.ofString(s);
+						if( b.length > 0xFFFF ) throw "assert";
+						sock.output.writeUInt16(b.length);
+						sock.output.writeBytes(b,0,b.length);
+					}
 				}
+				sock.output.flush();
 			}
 
-			Sys.print("> ");
-			var r = stdin.readLine();
-			var args = r.split(" ");
-			switch( args.shift() ) {
-			case "q", "quit":
-				dumpProcessOut();
-				break;
-			case "r", "run", "c", "continue":
-				var r = dbg.run();
-				switch( r ) {
-				case Exit:
-					dbg.resume();
-				case Breakpoint:
-					Sys.println("Thread "+dbg.stoppedThread+" paused");
-				case Error:
-					Sys.println("*** an error has occured, paused ***");
-				default:
-					throw "assert";
+			function sendProcessOut() {
+				if( process == null ) return;
+				if( process.exitCode(false) == null ) process.kill();
+				send(Stdout,[process.stdout.readAll().toString()],false);
+				send(Stderr,[process.stderr.readAll().toString()],false);
+			}
+
+			while( true ){
+				if( process != null ) {
+					var ecode = process.exitCode(false);
+					if( ecode != null ) {
+						send(Exited, [Std.string(ecode)],false);
+						sendProcessOut();
+					}
 				}
-			case "bt", "backtrace":
-				for( f in dbg.getBackTrace() )
-					Sys.println(frameStr(f));
-			case "where":
-				Sys.println(frameStr(dbg.getFrame()));
-			case "frame","f":
-				if( args.length == 1 )
-					dbg.currentFrame = Std.parseInt(args[0]);
-				Sys.println(frameStr(dbg.getFrame()));
-			case "up":
-				dbg.currentFrame += args.length == 0 ? 1 : Std.parseInt(args[0]);
-				if( dbg.currentFrame >= dbg.currentStack.length )
-					dbg.currentFrame = dbg.currentStack.length - 1;
-				Sys.println(frameStr(dbg.getFrame()));
-			case "down":
-				dbg.currentFrame -= args.length == 0 ? 1 : Std.parseInt(args[0]);
-				if( dbg.currentFrame < 0 )
-					dbg.currentFrame = 0;
-				Sys.println(frameStr(dbg.getFrame()));
-			case "b", "break":
-				var file = args.shift();
-				var line = Std.parseInt(args.shift());
-				if( dbg.addBreakpoint(file, line) ) {
-					breaks.push({file:file, line:line});
-					Sys.println("Breakpoint set");
-				} else
-					Sys.println("No breakpoint set");
-			case "p", "print":
-				var path = args.shift();
-				if( path == null ) {
-					Sys.println("Requires variable name");
-					continue;
+
+				if( running ){
+					switch( dbg.run(16,true) ){
+						case Exit:
+							dbg.resume(); 
+							// TODO?
+						case Breakpoint:
+							send(Breakpoint,[Std.string(dbg.stoppedThread)],false);
+							running = false;
+							sock.setBlocking( true );
+						case Error:
+							send(ErrorOccured,null,false);
+							running = false;
+							sock.setBlocking( true );
+						case Timeout:
+							// continue (check incoming cmd)
+						default:
+							throw "assert";
+					}
 				}
-				var v = dbg.eval(path);
-				if( v == null ) {
-					Sys.println("Unknown var " + path);
-					continue;
+
+				var cmd = null;
+				try{
+					cmd = sock.input.readLine(); 
+				} catch( e : haxe.io.Error ) {
+					if( !running || e != Blocked )
+						hl.Api.rethrow(e);
 				}
-				Sys.println(dbg.valueStr(v) + " : " + v.t.toString());
-			case "clear":
-				switch( args.length ) {
-				case 0:
-					clearBP();
-				case 1:
-					var file = args[1];
-					var line = Std.parseInt(file);
-					var count = 0;
-					for( b in breaks.copy() )
-						if( b.file == file || (line != null && b.line == line) ) {
-							dbg.removeBreakpoint(b.file, b.line);
-							breaks.remove(b);
-							count++;
+				if( cmd != null ){
+					var args = cmd.split(" ");
+					switch( args.shift() ){
+					case "run","continue":
+						send(Ok);
+						running = true;
+						sock.setBlocking( false );
+					case "pause":
+						send(Ok);
+						running = false;
+						sock.setBlocking( true );
+						send(Paused,["0"],false);
+					case "kill":
+						if( process != null ){
+							process.kill();
+							send(Ok);
+						}else{
+							send(Error);
 						}
-					Sys.println(count + " breakpoints removed");
+					case "quit":
+						send(Ok);
+						break;
+					case "threads":
+						send(Threads,[Std.string(dbg.debugInfos.mainThread)]);
+					case "backtrace":
+						send(Backtrace,dbg.getBackTrace().map(frameStr));
+					case "where":
+						send(Frame,[frameStr(dbg.getFrame())]);
+					case "frame":
+						if( args.length == 1 )
+							dbg.currentFrame = Std.parseInt(args[0]);
+						send(Frame,[frameStr(dbg.getFrame())]);
+					case "up":
+						dbg.currentFrame += args.length == 0 ? 1 : Std.parseInt(args[0]);
+						if( dbg.currentFrame >= dbg.currentStack.length )
+							dbg.currentFrame = dbg.currentStack.length - 1;
+						send(Frame,[frameStr(dbg.getFrame())]);
+					case "down":
+						dbg.currentFrame -= args.length == 0 ? 1 : Std.parseInt(args[0]);
+						if( dbg.currentFrame < 0 )
+							dbg.currentFrame = 0;
+						send(Frame,[frameStr(dbg.getFrame())]);
+					case "print":
+						var path = args.shift();
+						if( path == null ) {
+							send(Error);
+							continue;
+						}
+						var v = dbg.eval(path);
+						if( v == null ) {
+							send(UnknownVar);
+							continue;
+						}
+						send(Variable,[dbg.valueStr(v), v.t.toString()]);
+					case "break":
+						var file = args.shift();
+						var line = Std.parseInt(args.shift());
+						if( dbg.addBreakpoint(file, line) ) {
+							breaks.push({file:file, line:line});
+							send(Ok);
+						} else
+							send(Error);
+					case "unbreak":
+						var file = args.shift();
+						var line = Std.parseInt(args.shift());
+						var f = false;
+						for( b in breaks.copy() ){
+							if( b.file == file && b.line == line ) {
+								dbg.removeBreakpoint(b.file, b.line);
+								breaks.remove(b);
+								f = true;
+								break;
+							}
+						}
+						send( f ? Ok : Error );
+					default:
+						send(Error);
+					}
+				}				
+			}
+		}else{
+			var stdin = Sys.stdin();
+			while( true ) {
+				if( process != null ) {
+					var ecode = process.exitCode(false);
+					if( ecode != null ) {
+						dumpProcessOut();
+						error("Process exit with code " + ecode);
+					}
 				}
 
-			case "delete", "d":
-				clearBP();
-			default:
-				Sys.println("Unknown command " + r);
-			}
+				Sys.print("> ");
+				var r = stdin.readLine();
+				var args = r.split(" ");
+				switch( args.shift() ) {
+				case "q", "quit":
+					dumpProcessOut();
+					break;
+				case "r", "run", "c", "continue":
+					var r = dbg.run();
+					switch( r ) {
+					case Exit:
+						dbg.resume();
+					case Breakpoint:
+						Sys.println("Thread "+dbg.stoppedThread+" paused");
+					case Error:
+						Sys.println("*** an error has occured, paused ***");
+					default:
+						throw "assert";
+					}
+				case "bt", "backtrace":
+					for( f in dbg.getBackTrace() )
+						Sys.println(frameStr(f));
+				case "where":
+					Sys.println(frameStr(dbg.getFrame()));
+				case "frame","f":
+					if( args.length == 1 )
+						dbg.currentFrame = Std.parseInt(args[0]);
+					Sys.println(frameStr(dbg.getFrame()));
+				case "up":
+					dbg.currentFrame += args.length == 0 ? 1 : Std.parseInt(args[0]);
+					if( dbg.currentFrame >= dbg.currentStack.length )
+						dbg.currentFrame = dbg.currentStack.length - 1;
+					Sys.println(frameStr(dbg.getFrame()));
+				case "down":
+					dbg.currentFrame -= args.length == 0 ? 1 : Std.parseInt(args[0]);
+					if( dbg.currentFrame < 0 )
+						dbg.currentFrame = 0;
+					Sys.println(frameStr(dbg.getFrame()));
+				case "b", "break":
+					var file = args.shift();
+					var line = Std.parseInt(args.shift());
+					if( dbg.addBreakpoint(file, line) ) {
+						breaks.push({file:file, line:line});
+						Sys.println("Breakpoint set");
+					} else
+						Sys.println("No breakpoint set");
+				case "p", "print":
+					var path = args.shift();
+					if( path == null ) {
+						Sys.println("Requires variable name");
+						continue;
+					}
+					var v = dbg.eval(path);
+					if( v == null ) {
+						Sys.println("Unknown var " + path);
+						continue;
+					}
+					Sys.println(dbg.valueStr(v) + " : " + v.t.toString());
+				case "clear":
+					switch( args.length ) {
+					case 0:
+						clearBP();
+					case 1:
+						var file = args[1];
+						var line = Std.parseInt(file);
+						var count = 0;
+						for( b in breaks.copy() )
+							if( b.file == file || (line != null && b.line == line) ) {
+								dbg.removeBreakpoint(b.file, b.line);
+								breaks.remove(b);
+								count++;
+							}
+						Sys.println(count + " breakpoints removed");
+					}
 
+				case "delete", "d":
+					clearBP();
+				default:
+					Sys.println("Unknown command " + r);
+				}
+			}
 		}
 	}
 
