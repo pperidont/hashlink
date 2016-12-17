@@ -230,6 +230,15 @@ class Debugger extends DebugValue.DebugValueReader {
 		return wait(timeout,stopOnTimeout);
 	}
 
+	public function breakpoint(){
+		if( !DebugApi.breakpoint(pid) )
+			return false;
+		wait();
+		currentFrame = 0;
+		currentStack = makeStack(debugInfos.mainThread);
+		return true;
+	}
+
 	function wait( timeout = 1000, stopOnTimeout = false ) {
 		var tid = 0;
 		var cmd = Timeout;
@@ -707,10 +716,14 @@ class Debugger extends DebugValue.DebugValueReader {
 						running = true;
 						sock.setBlocking( false );
 					case "pause":
-						send(Ok);
-						running = false;
-						sock.setBlocking( true );
-						send(Paused,["0"],false);
+						if( dbg.breakpoint() ){
+							send(Ok);
+							running = false;
+							sock.setBlocking( true );
+							send(Paused,[Std.string(dbg.debugInfos.mainThread)],false);
+						}else{
+							send(Error);
+						}
 					case "kill":
 						if( process != null ){
 							process.kill();
