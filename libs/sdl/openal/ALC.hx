@@ -130,7 +130,7 @@ extern class ALC {
 	public static inline var _7POINT1_SOFT                    = 0x1506;
 	
 
-	public static function openDeviceSoft              (devicename : hl.Bytes) : Device;
+	public static function loopbackOpenDeviceSoft      (devicename : hl.Bytes) : Device;
 	public static function isRenderFormatSupportedSoft (device : Device, freq : Int, channels : Int, type : Int) : Bool;
 	public static function renderSamplesSoft           (device : Device, buffer : hl.Bytes, samples : Int) : Void;
 
@@ -138,7 +138,7 @@ extern class ALC {
 	// ALC_EXT_DEFAULT_FILTER_ORDER
 	// ----------------------------------------------------------------------------
 
-	public static inline var ALC_DEFAULT_FILTER_ORDER         = 0x1100;
+	public static inline var DEFAULT_FILTER_ORDER             = 0x1100;
 
 	// ----------------------------------------------------------------------------
 	// ALC_SOFT_pause_device
@@ -167,4 +167,11 @@ extern class ALC {
 	public static function getStringiSoft  (device : Device, param : Int, index : Int) : hl.Bytes;
 	public static function resetDeviceSoft (device : Device, attribs : hl.Bytes) : Bool;
 
+	// ------------------------------------------------------------------------
+	// ALC_EXT_EFX
+	// ------------------------------------------------------------------------
+
+	public static inline var EFX_MAJOR_VERSION                = 0x20001;
+	public static inline var EFX_MINOR_VERSION                = 0x20002;
+	public static inline var MAX_AUXILIARY_SENDS              = 0x20003;
 }

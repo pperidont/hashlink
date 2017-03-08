@@ -594,7 +594,7 @@ DEFINE_PRIM(TCONTEXT, alc_get_thread_context, _NO_ARG);
 // ALC_SOFT_loopback Extension
 // ----------------------------------------------------------------------------
 
-HL_PRIM ALCdevice* HL_NAME(alc_open_device_soft)(vbyte *devicename) {
+HL_PRIM ALCdevice* HL_NAME(alc_loopback_open_device_soft)(vbyte *devicename) {
 	CHECK_EXT(alcLoopbackOpenDeviceSOFT);
 	return alcLoopbackOpenDeviceSOFT(devicename);
 }
@@ -609,7 +609,7 @@ HL_PRIM void HL_NAME(alc_render_samples_soft)(ALCdevice *device, vbyte *buffer, 
 	alcRenderSamplesSOFT(device, buffer, samples);
 }
 
-DEFINE_PRIM(TDEVICE, alc_open_device_soft,                _BYTES);
+DEFINE_PRIM(TDEVICE, alc_loopback_open_device_soft,       _BYTES);
 DEFINE_PRIM(_BOOL,   alc_is_render_format_supported_soft, TDEVICE _I32 _I32 _I32);
 DEFINE_PRIM(_VOID,   alc_render_samples_soft,             TDEVICE _BYTES _I32);
 
