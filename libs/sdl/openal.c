@@ -504,7 +504,7 @@ DEFINE_PRIM(_F32,   al_get_float,   _I32);
 DEFINE_PRIM(_F64,   al_get_double,  _I32);
 DEFINE_PRIM(_I32,   al_get_error,   _NO_ARG);
 
-DEFINE_PRIM(_VOID, al_load_extensions,      TDEVICE);
+DEFINE_PRIM(_VOID, al_load_extensions,      _NO_ARG);
 DEFINE_PRIM(_BOOL, al_is_extension_present, _BYTES);
 DEFINE_PRIM(_I32,  al_get_enum_value,       _BYTES);
 

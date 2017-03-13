@@ -12,17 +12,17 @@ abstract Source(Int) {
 
 abstract Effect(Int) {
 	public inline function toInt() : Int { return this; }
-	public static inline function ofInt( v : Int ) : Source { return cast v; }
+	public static inline function ofInt( v : Int ) : Effect { return cast v; }
 }
 
 abstract Filter(Int) {
 	public inline function toInt() : Int { return this; }
-	public static inline function ofInt( v : Int ) : Source { return cast v; }
+	public static inline function ofInt( v : Int ) : Filter { return cast v; }
 }
 
 abstract EffectSlot(Int) {
 	public inline function toInt() : Int { return this; }
-	public static inline function ofInt( v : Int ) : Source { return cast v; }
+	public static inline function ofInt( v : Int ) : EffectSlot { return cast v; }
 }
 
 @:hlNative("sdl","al_")
@@ -53,9 +53,9 @@ extern class AL {
 	public static function getError() : Int;
 
 	// Extension support
+	public static function loadExtensions     () : Void;
 	public static function isExtensionPresent (extname : hl.Bytes) : Bool;
 	public static function getEnumValue       (ename   : hl.Bytes) : Int;
-	//public static function getProcAddress     (fname   : hl.Bytes) : Void*;
 
 	// Set Listener parameters
 	public static function listenerf  (param : Int, value  : hl.F32) : Void;
