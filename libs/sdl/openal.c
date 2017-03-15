@@ -2,13 +2,18 @@
 #include <hl.h>
 
 #ifdef __APPLE__
-#include <OpenAL/al.h>
-#include <OpenAL/alc.h>
-#include <OpenAL/alext.h>
+	#ifdef openal_soft
+		#include <AL/al.h>
+		#include <AL/alc.h>
+		#include <AL/alext.h>
+	#else
+		#include <OpenAL/al.h>
+		#include <OpenAL/alc.h>
+	#endif
 #else
-#include <AL/al.h>
-#include <AL/alc.h>
-#include <AL/alext.h>
+	#include <AL/al.h>
+	#include <AL/alc.h>
+	#include <AL/alext.h>
 #endif
 
 // ----------------------------------------------------------------------------
@@ -571,10 +576,14 @@ DEFINE_PRIM(_I32,  al_get_bufferi,  _I32 _I32);
 DEFINE_PRIM(_VOID, al_get_buffer3i, _I32 _I32 _REF(_I32) _REF(_I32) _REF(_I32));
 DEFINE_PRIM(_VOID, al_get_bufferiv, _I32 _I32 _BYTES);
 
+// ----------------------------------------------------------------------------
+// EXTENSIONS
+// ----------------------------------------------------------------------------
+
 #define CHECK_EXT(fun) if(fun == NULL) hl_error("Unsupported extension function")
 
 // ----------------------------------------------------------------------------
-// EXT_thread_local_context Extension
+#ifdef EXT_thread_local_context
 // ----------------------------------------------------------------------------
 
 HL_PRIM bool HL_NAME(alc_set_thread_context)(ALCcontext *context) {
@@ -589,9 +598,10 @@ HL_PRIM ALCcontext* HL_NAME(alc_get_thread_context)() {
 
 DEFINE_PRIM(_BOOL,    alc_set_thread_context, TCONTEXT);
 DEFINE_PRIM(TCONTEXT, alc_get_thread_context, _NO_ARG);
+#endif
 
 // ----------------------------------------------------------------------------
-// ALC_SOFT_loopback Extension
+#ifdef ALC_SOFT_loopback
 // ----------------------------------------------------------------------------
 
 HL_PRIM ALCdevice* HL_NAME(alc_loopback_open_device_soft)(vbyte *devicename) {
@@ -612,9 +622,10 @@ HL_PRIM void HL_NAME(alc_render_samples_soft)(ALCdevice *device, vbyte *buffer, 
 DEFINE_PRIM(TDEVICE, alc_loopback_open_device_soft,       _BYTES);
 DEFINE_PRIM(_BOOL,   alc_is_render_format_supported_soft, TDEVICE _I32 _I32 _I32);
 DEFINE_PRIM(_VOID,   alc_render_samples_soft,             TDEVICE _BYTES _I32);
+#endif
 
 // ----------------------------------------------------------------------------
-// ALC_SOFT_pause_device Extension
+#ifdef ALC_SOFT_pause_device
 // ----------------------------------------------------------------------------
 
 HL_PRIM void HL_NAME(alc_device_pause_soft)(ALCdevice *device) {
@@ -629,9 +640,10 @@ HL_PRIM void HL_NAME(alc_device_resume_soft)(ALCdevice *device) {
 
 DEFINE_PRIM(_VOID, alc_device_pause_soft,  TDEVICE);
 DEFINE_PRIM(_VOID, alc_device_resume_soft, TDEVICE);
+#endif
 
 // ----------------------------------------------------------------------------
-// SOFT_HRTF Extension
+#ifdef SOFT_HRTF
 // ----------------------------------------------------------------------------
 
 HL_PRIM vbyte* HL_NAME(alc_get_stringi_soft)(ALCdevice *device, int param, int index) {
@@ -646,9 +658,10 @@ HL_PRIM bool HL_NAME(alc_reset_device_soft)(ALCdevice *device, vbyte *attribs) {
 
 DEFINE_PRIM(_BYTES, alc_get_stringi_soft,  TDEVICE _I32 _I32);
 DEFINE_PRIM(_BOOL,  alc_reset_device_soft, TDEVICE _BYTES);
+#endif
 
 // ----------------------------------------------------------------------------
-// AL_EXT_STATIC_BUFFER Extension
+#ifdef AL_EXT_STATIC_BUFFER
 // ----------------------------------------------------------------------------
 
 HL_PRIM void HL_NAME(al_buffer_data_static)(unsigned buffer, int format, vbyte *data, int len, int freq) {
@@ -657,9 +670,10 @@ HL_PRIM void HL_NAME(al_buffer_data_static)(unsigned buffer, int format, vbyte *
 }
 
 DEFINE_PRIM(_VOID, al_buffer_data_static, _I32 _I32 _BYTES _I32 _I32);
+#endif
 
 // ----------------------------------------------------------------------------
-// AL_SOFT_buffer_sub_data Extension
+#ifdef AL_SOFT_buffer_sub_data
 // ----------------------------------------------------------------------------
 
 HL_PRIM void HL_NAME(al_buffer_sub_data_soft)(unsigned buffer, int format, vbyte *data, int offset, int length) {
@@ -668,9 +682,10 @@ HL_PRIM void HL_NAME(al_buffer_sub_data_soft)(unsigned buffer, int format, vbyte
 }
 
 DEFINE_PRIM(_VOID, al_buffer_sub_data_soft, _I32 _I32 _BYTES _I32 _I32);
+#endif
 
 // ----------------------------------------------------------------------------
-// AL_EXT_FOLDBACK Extension
+#ifdef AL_EXT_FOLDBACK
 // ----------------------------------------------------------------------------
 
 HL_PRIM void HL_NAME(al_request_foldback_start)(int mode, int count, int length, vbyte *mem, vclosure *callback) {
@@ -686,9 +701,11 @@ HL_PRIM void HL_NAME(al_request_foldback_stop)() {
 
 DEFINE_PRIM(_VOID, al_request_foldback_start, _I32 _I32 _I32 _BYTES _FUN(_VOID, _I32 _I32));
 DEFINE_PRIM(_VOID, al_request_foldback_stop,  _NO_ARG);
+#endif
+
 
 // ----------------------------------------------------------------------------
-// AL_SOFT_buffer_samples Extension
+#ifdef AL_SOFT_buffer_samples
 // ----------------------------------------------------------------------------
 
 HL_PRIM void HL_NAME(al_buffer_samples_soft)(unsigned buffer, int samplerate, int internatlformat, int samples, int channels, int type, vbyte *data) {
@@ -715,9 +732,10 @@ DEFINE_PRIM(_VOID, al_buffer_samples_soft,              _I32 _I32 _I32 _I32 _I32
 DEFINE_PRIM(_VOID, al_buffer_sub_samples_soft,          _I32 _I32 _I32 _I32 _I32 _BYTES);
 DEFINE_PRIM(_VOID, al_get_buffer_samples_soft,          _I32 _I32 _I32 _I32 _I32 _BYTES);
 DEFINE_PRIM(_BOOL, al_is_buffer_format_supported_soft,  _I32);
+#endif
 
 // ----------------------------------------------------------------------------
-// AL_SOFT_source_latency Extension
+#ifdef AL_SOFT_source_latency
 // ----------------------------------------------------------------------------
 
 HL_PRIM void HL_NAME(al_sourced_soft)(unsigned source, int param, double value) {
@@ -816,9 +834,10 @@ DEFINE_PRIM(_VOID, al_sourcei64v_soft, _I32 _I32 _BYTES);
 DEFINE_PRIM(_VOID, al_get_sourcei64_soft,  _I32 _I32 _REF(_I32) _REF(_I32));
 DEFINE_PRIM(_VOID, al_get_source3i64_soft, _I32 _I32 _REF(_I32) _REF(_I32) _REF(_I32) _REF(_I32) _REF(_I32) _REF(_I32));
 DEFINE_PRIM(_VOID, al_get_sourcei64v_soft, _I32 _I32 _BYTES);
+#endif
 
 // ----------------------------------------------------------------------------
-// AL_SOFT_deferred_updates
+#ifdef AL_SOFT_deferred_updates
 // ----------------------------------------------------------------------------
 
 HL_PRIM void HL_NAME(al_defer_updates_soft)() {
@@ -833,9 +852,10 @@ HL_PRIM void HL_NAME(al_process_updates_soft)() {
 
 DEFINE_PRIM(_VOID, al_defer_updates_soft,   _NO_ARG);
 DEFINE_PRIM(_VOID, al_process_updates_soft, _NO_ARG);
+#endif
 
 // ----------------------------------------------------------------------------
-// ALC_EXT_EFX
+#ifdef ALC_EXT_EFX
 // ----------------------------------------------------------------------------
 
 HL_PRIM void HL_NAME(al_gen_effects)(int n, vbyte *effects) {
@@ -1027,3 +1047,4 @@ DEFINE_PRIM(_I32,  al_get_auxiliary_effect_sloti,    _I32 _I32);
 DEFINE_PRIM(_VOID, al_get_auxiliary_effect_slotiv,   _I32 _I32 _BYTES);
 DEFINE_PRIM(_F32,  al_get_auxiliary_effect_slotf,    _I32 _I32);
 DEFINE_PRIM(_VOID, al_get_auxiliary_effect_slotfv,   _I32 _I32 _BYTES);
+#endif

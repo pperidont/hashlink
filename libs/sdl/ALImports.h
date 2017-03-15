@@ -1,35 +1,24 @@
-// ----------------------------------------------------------------------------
-// AL_EXT_STATIC_BUFFER
-// ----------------------------------------------------------------------------
-
+#ifdef AL_EXT_STATIC_BUFFER
 AL_IMPORT(alBufferDataStatic, PFNALBUFFERDATASTATICPROC);
+#endif
 
-// ----------------------------------------------------------------------------
-// AL_SOFT_buffer_sub_data
-// ----------------------------------------------------------------------------
-
+#ifdef AL_SOFT_buffer_sub_data
 AL_IMPORT(alBufferSubDataSOFT, PFNALBUFFERSUBDATASOFTPROC);
+#endif
 
-// ----------------------------------------------------------------------------
-// AL_EXT_FOLDBACK
-// ----------------------------------------------------------------------------
-
+#ifdef AL_EXT_FOLDBACK
 AL_IMPORT(alRequestFoldbackStart, LPALREQUESTFOLDBACKSTART);
 AL_IMPORT(alRequestFoldbackStop, LPALREQUESTFOLDBACKSTOP);
+#endif
 
-// ----------------------------------------------------------------------------
-// AL_SOFT_buffer_samples Extension
-// ----------------------------------------------------------------------------
-
+#ifdef AL_SOFT_buffer_samples
 AL_IMPORT(alBufferSamplesSOFT, LPALBUFFERSAMPLESSOFT);
 AL_IMPORT(alBufferSubSamplesSOFT, LPALBUFFERSUBSAMPLESSOFT);
 AL_IMPORT(alGetBufferSamplesSOFT, LPALGETBUFFERSAMPLESSOFT);
 AL_IMPORT(alIsBufferFormatSupportedSOFT, LPALISBUFFERFORMATSUPPORTEDSOFT);
+#endif
 
-// ----------------------------------------------------------------------------
-// AL_SOFT_source_latency
-// ----------------------------------------------------------------------------
-
+#ifdef AL_SOFT_source_latency
 AL_IMPORT(alSourcedSOFT, LPALSOURCEDSOFT);
 AL_IMPORT(alSource3dSOFT, LPALSOURCE3DSOFT);
 AL_IMPORT(alSourcedvSOFT, LPALSOURCEDVSOFT);
@@ -42,18 +31,14 @@ AL_IMPORT(alSourcei64vSOFT, LPALSOURCEI64VSOFT);
 AL_IMPORT(alGetSourcei64SOFT, LPALGETSOURCEI64SOFT);
 AL_IMPORT(alGetSource3i64SOFT, LPALGETSOURCE3I64SOFT);
 AL_IMPORT(alGetSourcei64vSOFT, LPALGETSOURCEI64VSOFT);
+#endif
 
-// ----------------------------------------------------------------------------
-// AL_SOFT_deferred_updates
-// ----------------------------------------------------------------------------
-
+#ifdef AL_SOFT_deferred_updates
 AL_IMPORT(alDeferUpdatesSOFT, LPALDEFERUPDATESSOFT);
 AL_IMPORT(alProcessUpdatesSOFT, LPALPROCESSUPDATESSOFT);
+#endif
 
-// ----------------------------------------------------------------------------
-// ALC_EXT_EFX
-// ----------------------------------------------------------------------------
-
+#ifdef ALC_EXT_EFX
 AL_IMPORT(alGenEffects, LPALGENEFFECTS);
 AL_IMPORT(alDeleteEffects, LPALDELETEEFFECTS);
 AL_IMPORT(alIsEffect, LPALISEFFECT);
@@ -89,3 +74,4 @@ AL_IMPORT(alGetAuxiliaryEffectSloti, LPALGETAUXILIARYEFFECTSLOTI);
 AL_IMPORT(alGetAuxiliaryEffectSlotiv, LPALGETAUXILIARYEFFECTSLOTIV);
 AL_IMPORT(alGetAuxiliaryEffectSlotf, LPALGETAUXILIARYEFFECTSLOTF);
 AL_IMPORT(alGetAuxiliaryEffectSlotfv, LPALGETAUXILIARYEFFECTSLOTFV);
+#endif
