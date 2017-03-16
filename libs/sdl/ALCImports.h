@@ -1,28 +1,20 @@
-// ----------------------------------------------------------------------------
-// ALC_EXT_thread_local_context
-// ----------------------------------------------------------------------------
-
+#ifdef ALC_EXT_thread_local_context
 ALC_IMPORT(alcSetThreadContext, PFNALCSETTHREADCONTEXTPROC);
 ALC_IMPORT(alcGetThreadContext, PFNALCGETTHREADCONTEXTPROC);
+#endif
 
-// ----------------------------------------------------------------------------
-// ALC_SOFT_loopback
-// ----------------------------------------------------------------------------
-
+#ifdef ALC_SOFT_loopback
 ALC_IMPORT(alcLoopbackOpenDeviceSOFT, LPALCLOOPBACKOPENDEVICESOFT);
 ALC_IMPORT(alcIsRenderFormatSupportedSOFT, LPALCISRENDERFORMATSUPPORTEDSOFT);
 ALC_IMPORT(alcRenderSamplesSOFT, LPALCRENDERSAMPLESSOFT);
+#endif
 
-// ----------------------------------------------------------------------------
-// ALC_SOFT_pause_device
-// ----------------------------------------------------------------------------
-
+#ifdef ALC_SOFT_pause_device
 ALC_IMPORT(alcDevicePauseSOFT, LPALCDEVICEPAUSESOFT);
 ALC_IMPORT(alcDeviceResumeSOFT, LPALCDEVICERESUMESOFT);
+#endif
 
-// ----------------------------------------------------------------------------
-// ALC_SOFT_HRTF
-// ----------------------------------------------------------------------------
-
+#ifdef ALC_SOFT_HRTF
 ALC_IMPORT(alcGetStringiSOFT, LPALCGETSTRINGISOFT);
 ALC_IMPORT(alcResetDeviceSOFT, LPALCRESETDEVICESOFT);
+#endif
