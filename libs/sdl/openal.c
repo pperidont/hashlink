@@ -1,28 +1,25 @@
 #define HL_NAME(n) sdl_##n
 #include <hl.h>
 
-#ifdef __APPLE__
-	#ifdef openal_soft
-		#include <AL/al.h>
-		#include <AL/alc.h>
-		#include <AL/alext.h>
-	#else
-		#include <OpenAL/al.h>
-		#include <OpenAL/alc.h>
-	#endif
+#if defined(__APPLE__) && !defined(openal_soft)
+	#include <OpenAL/al.h>
+	#include <OpenAL/alc.h>
 #else
 	#include <AL/al.h>
 	#include <AL/alc.h>
 	#include <AL/alext.h>
+	#define OPENAL_EXT
 #endif
 
 // ----------------------------------------------------------------------------
 // ALC
 // ----------------------------------------------------------------------------
 
+#ifdef OPENAL_EXT
 #define ALC_IMPORT(fun, t) t fun
 #include "ALCImports.h"
 #undef ALC_IMPORT
+#endif
 
 // Context management
 
@@ -72,9 +69,9 @@ HL_PRIM int HL_NAME(alc_get_error)(ALCdevice *device) {
 
 // Extension support
 
-#define ALC_IMPORT(fun,t) fun = (t)alcGetProcAddress(device,#fun)
+//#define ALC_IMPORT(fun,t) fun = (t)alcGetProcAddress(device,#fun)
 HL_PRIM void HL_NAME(alc_load_extensions)(ALCdevice *device) {
-#	include "ALCImports.h"
+//#	include "ALCImports.h"
 }
 
 HL_PRIM bool HL_NAME(alc_is_extension_present)(ALCdevice *device, vbyte *extname) {
@@ -150,9 +147,11 @@ DEFINE_PRIM(_VOID,    alc_capture_samples,      TDEVICE _BYTES _I32);
 // AL
 // ----------------------------------------------------------------------------
 
+#ifdef OPENAL_EXT
 #define AL_IMPORT(fun, t) t fun
 #include "ALImports.h"
 #undef AL_IMPORT
+#endif
 
 HL_PRIM void HL_NAME(al_doppler_factor)(float value) {
 	alDopplerFactor(value);
@@ -230,9 +229,9 @@ HL_PRIM int HL_NAME(al_get_error)() {
 
 // Extension support
 
-#define AL_IMPORT(fun,t) fun = (t)alGetProcAddress(#fun)
+//#define AL_IMPORT(fun,t) fun = (t)alGetProcAddress(#fun)
 HL_PRIM void HL_NAME(al_load_extensions)() {
-#	include "ALImports.h"
+//#	include "ALImports.h"
 }
 
 
