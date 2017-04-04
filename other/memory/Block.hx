@@ -83,7 +83,8 @@ class Block {
 
 	public var subs : Array<Block>; // can be null
 	public var parents : Array<Block>; // if multiple owners
-
+	public var depth : Int = -1;
+	
 	public function new() {
 	}
 
@@ -111,13 +112,13 @@ class Block {
 		b.subs.push(this);
 	}
 
-	public function finalize() {
+	public function finalize( maxDepth : Int ) {
 		if( parents == null ) return;
 
 		inline function getPriority(b:Block) {
 			if( b.type == null ) return -2;
 			if( !b.type.hasPtr ) return -1; // false positive
-			return switch( b.type.t ) {
+			return (maxDepth-b.depth) * 3 + switch( b.type.t ) {
 			case HFun(_): 0;
 			case HVirtual(_): 1;
 			default: 2;

@@ -357,8 +357,25 @@ class Memory {
 				f.b.type.falsePositiveIndexes[f.idx]++;
 			}
 
+		var tmp = [all];
+		all.depth = 0;
+		var maxDepth = 0;
+		while( tmp.length > 0 ){
+			var b = tmp.shift();
+			if( b.subs != null ){
+				for( s in b.subs ){
+					if( s.depth < 0 ){
+						s.depth = b.depth + 1;
+						if( s.depth > maxDepth )
+							maxDepth = s.depth;
+						tmp.push(s);
+					}
+				}
+			}
+		}
+		
 		for( b in blocks )
-			b.finalize();
+			b.finalize(maxDepth);
 
 		var unk = 0, unkMem = 0, unRef = 0;
 		for( b in blocks ) {
