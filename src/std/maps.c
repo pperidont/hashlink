@@ -56,8 +56,8 @@ HL_PRIM hl_bytes_map *hl_hballoc() {
 }
 
 static vdynamic **hl_hbfind( hl_bytes_map *m, uchar *key ) {
-	int hash = hl_hash_gen(key,false);
-	int ckey = ((unsigned)hash) % ((unsigned)m->ncells);
+	int hash = hl_hash_gen(key,false) | 1;
+	int ckey = (((unsigned)hash)>>1) % ((unsigned)m->ncells);
 	hl_bytes_cell *c = m->cells[ckey];
 	int i;
 	while( c ) {
@@ -70,7 +70,7 @@ static vdynamic **hl_hbfind( hl_bytes_map *m, uchar *key ) {
 }
 
 static void hl_hbremap( hl_bytes_map *m, uchar *key, int hash, vdynamic *value, hl_bytes_cell **reuse ) {
-	int ckey = ((unsigned)hash) % ((unsigned)m->ncells);
+	int ckey = (((unsigned)hash)>>1) % ((unsigned)m->ncells);
 	hl_bytes_cell *c = m->cells[ckey];
 	if( c && c->nvalues < H_CELL_SIZE ) {
 		c->hashes[c->nvalues] = hash;
@@ -94,8 +94,8 @@ static void hl_hbremap( hl_bytes_map *m, uchar *key, int hash, vdynamic *value, 
 }
 
 static bool hl_hbadd( hl_bytes_map *m, uchar *key, vdynamic *value ) {
-	int hash = hl_hash_gen(key,false);
-	int ckey = ((unsigned)hash) % ((unsigned)m->ncells);
+	int hash = hl_hash_gen(key,false) | 1;
+	int ckey = (((unsigned)hash)>>1) % ((unsigned)m->ncells);
 	hl_bytes_cell *c = m->cells[ckey];
 	hl_bytes_cell *pspace = NULL;
 	int i;
@@ -173,8 +173,8 @@ HL_PRIM vdynamic* hl_hbget( hl_bytes_map *m, vbyte *key ) {
 
 HL_PRIM bool hl_hbremove( hl_bytes_map *m, vbyte *_key ) {
 	uchar *key = (uchar*)_key;
-	int hash = hl_hash_gen(key,false);
-	int ckey = ((unsigned)hash) % ((unsigned)m->ncells);
+	int hash = hl_hash_gen(key,false) | 1;
+	int ckey = (((unsigned)hash)>>1) % ((unsigned)m->ncells);
 	hl_bytes_cell *c = m->cells[ckey];
 	hl_bytes_cell *prev = NULL;
 	int i;

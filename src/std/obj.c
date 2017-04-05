@@ -86,7 +86,7 @@ HL_PRIM int hl_hash_utf8( const char *name ) {
 		h = 223 * h + (unsigned)*name;
 		name++;
 	}
-	h %= 0x1FFFFF7B;
+	h = ((h << 1) % 0x1FFFFF7B) | 1;
 	return h;
 }
 
@@ -97,12 +97,12 @@ HL_PRIM int hl_hash_gen( const uchar *name, bool cache_name ) {
 		h = 223 * h + (unsigned)*name;
 		name++;
 	}
-	h %= 0x1FFFFF7B;
+	h = ((h << 1) % 0x1FFFFF7B) | 1;
 	if( cache_name ) {
 		hl_field_lookup *l = hl_lookup_find(hl_cache, hl_cache_count, h);
 		// check for potential conflict (see haxe#5572)
 		while( l && ucmp((uchar*)l->t,oname) != 0 ) {
-			h++;
+			h+=2;
 			l = hl_lookup_find(hl_cache, hl_cache_count, h);
 		}
 		if( l == NULL ) {
