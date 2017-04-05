@@ -364,8 +364,9 @@ class Memory {
 			var b = tmp.shift();
 			if( b.subs != null ){
 				for( s in b.subs ){
-					if( s.depth < 0 ){
+					if( s.depth < 0 || s.depth > b.depth+1 ){
 						s.depth = b.depth + 1;
+						s.owner = b;
 						if( s.depth > maxDepth )
 							maxDepth = s.depth;
 						tmp.push(s);
